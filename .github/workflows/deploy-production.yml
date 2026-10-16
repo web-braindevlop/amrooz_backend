@@ -1,0 +1,60 @@
+name: Deploy Backend to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # Allows manual trigger from GitHub
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Deploy to Hostinger via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            echo "🚀 Starting deployment..."
+            
+            # Navigate to project directory
+            cd /home/u278943707/domains/api.amroozcollection.com/hbuilds/current/nodejs
+            
+            # Pull latest code from GitHub
+            git pull origin main
+            
+            # Install dependencies
+            npm ci --production
+            
+            # Build the application
+            npm run build
+            
+            # Restart the application (Hostinger will auto-restart on file changes)
+            touch /home/u278943707/domains/api.amroozcollection.com/hbuilds/current/nodejs/dist/main.js
+            
+            echo "✅ Deployment completed successfully!"
+
+      - name: Verify deployment
+        run: |
+          echo "⏳ Waiting for server to restart..."
+          sleep 10
+          curl -f https://api.amroozcollection.com/api || exit 1
+          echo "✅ Backend is responding!"
