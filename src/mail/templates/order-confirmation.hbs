@@ -95,10 +95,9 @@
                 <p style="margin: 0; font-size: 14px; color: #4a4a4a; line-height: 1.6;">
                   {{#if shippingAddress.fullName}}{{shippingAddress.fullName}}<br>{{/if}}
                   {{#if shippingAddress.phone}}{{shippingAddress.phone}}<br>{{/if}}
-                  {{#if shippingAddress.street}}{{shippingAddress.street}}<br>{{/if}}
-                  {{#if shippingAddress.apartment}}{{shippingAddress.apartment}}<br>{{/if}}
-                  {{#if shippingAddress.city}}{{shippingAddress.city}}{{#if shippingAddress.postalCode}}, {{shippingAddress.postalCode}}{{/if}}<br>{{/if}}
-                  {{#if shippingAddress.province}}{{shippingAddress.province}}{{#if shippingAddress.country}}, {{shippingAddress.country}}{{/if}}{{/if}}
+                  {{#if shippingAddress.street}}{{shippingAddress.street}}{{/if}}{{#if shippingAddress.apartment}}, {{shippingAddress.apartment}}{{/if}}{{#if shippingAddress.street}}<br>{{/if}}
+                  {{#if shippingAddress.city}}{{shippingAddress.city}}{{/if}}{{#if shippingAddress.postalCode}}, {{shippingAddress.postalCode}}{{/if}}{{#if shippingAddress.city}}<br>{{/if}}
+                  {{#if shippingAddress.province}}{{shippingAddress.province}}{{/if}}{{#if shippingAddress.country}}, {{shippingAddress.country}}{{/if}}
                 </p>
               </div>
             </td>
@@ -127,6 +126,16 @@
                 </table>
                 <p style="margin: 12px 0 0; font-size: 13px; color: #6b5b4d; line-height: 1.5;">
                   ⚠️ Please save this password and log in to manage your orders. You can change it after logging in.
+                </p>
+              </div>
+            </td>
+          </tr>
+          {{else}}
+          <tr>
+            <td style="padding: 0 30px 30px;">
+              <div style="background-color: #f0f7ff; padding: 16px; border-radius: 6px; border-left: 4px solid #4a90e2;">
+                <p style="margin: 0; font-size: 13px; color: #4a4a4a; line-height: 1.6;">
+                  ℹ️ If this is your first order with us, a separate welcome email with your account details was sent to you. If you need to access your account, you can use the "Forgot Password" option.
                 </p>
               </div>
             </td>
