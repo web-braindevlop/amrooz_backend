@@ -209,9 +209,12 @@ CREATE TABLE IF NOT EXISTS `reviews` (
 CREATE TABLE IF NOT EXISTS `customers` (
   `id` int NOT NULL AUTO_INCREMENT,
   `email` varchar(180) NOT NULL,
+  `passwordHash` varchar(255) DEFAULT NULL,
   `firstName` varchar(80) NOT NULL,
-  `lastName` varchar(80) NOT NULL,
+  `lastName` varchar(80) DEFAULT NULL,
   `phone` varchar(30) DEFAULT NULL,
+  `isActive` tinyint NOT NULL DEFAULT '1',
+  `acceptsMarketing` tinyint NOT NULL DEFAULT '0',
   `createdAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
