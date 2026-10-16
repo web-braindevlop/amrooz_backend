@@ -13,6 +13,8 @@ import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
 import { OrdersModule } from './orders/orders.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { MailModule } from './mail/mail.module';
+import { CustomersModule } from './customers/customers.module';
 
 @Module({
   imports: [
@@ -58,6 +60,8 @@ import { UploadsModule } from './uploads/uploads.module';
     AdminModule,
     OrdersModule,
     UploadsModule,
+    MailModule,
+    CustomersModule,
   ],
   providers: [
     {

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmation</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f5f5f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <!-- Main Container -->
+        <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #f9f6f2 0%, #ede7dd 100%); padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+              <h1 style="margin: 0; font-size: 32px; color: #2c1810; font-weight: 700; letter-spacing: 1px;">
+                Amrooz Collection
+              </h1>
+              <p style="margin: 8px 0 0; font-size: 14px; color: #6b5b4d; font-style: italic;">
+                Premium Fashion
+              </p>
+            </td>
+          </tr>
+
+          <!-- Thank You Section -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <h2 style="margin: 0 0 16px; font-size: 24px; color: #2c1810; font-weight: 600;">
+                Thank you for your order!
+              </h2>
+              <p style="margin: 0 0 8px; font-size: 16px; color: #4a4a4a; line-height: 1.6;">
+                Your order has been confirmed and will be shipped soon.
+              </p>
+              <p style="margin: 0; font-size: 16px; color: #6b5b4d;">
+                Order Number: <strong style="color: #2c1810; font-size: 18px;">#{{orderNumber}}</strong>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Items Table -->
+          <tr>
+            <td style="padding: 0 30px 30px;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
+                <thead>
+                  <tr style="background-color: #f9f6f2;">
+                    <th style="padding: 12px; text-align: left; font-size: 13px; font-weight: 600; color: #2c1810; border-bottom: 2px solid #e0e0e0;">Item</th>
+                    <th style="padding: 12px; text-align: left; font-size: 13px; font-weight: 600; color: #2c1810; border-bottom: 2px solid #e0e0e0;">Variant</th>
+                    <th style="padding: 12px; text-align: center; font-size: 13px; font-weight: 600; color: #2c1810; border-bottom: 2px solid #e0e0e0;">Qty</th>
+                    <th style="padding: 12px; text-align: right; font-size: 13px; font-weight: 600; color: #2c1810; border-bottom: 2px solid #e0e0e0;">Unit Price</th>
+                    <th style="padding: 12px; text-align: right; font-size: 13px; font-weight: 600; color: #2c1810; border-bottom: 2px solid #e0e0e0;">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{#each items}}
+                  <tr style="{{#if @index}}{{#unless (eq @index 0)}}background-color: #fafafa;{{/unless}}{{/if}}">
+                    <td style="padding: 12px; font-size: 14px; color: #4a4a4a; border-bottom: 1px solid #f0f0f0;">{{name}}</td>
+                    <td style="padding: 12px; font-size: 13px; color: #6b5b4d; border-bottom: 1px solid #f0f0f0;">{{#if variant}}{{variant}}{{else}}—{{/if}}</td>
+                    <td style="padding: 12px; text-align: center; font-size: 14px; color: #4a4a4a; border-bottom: 1px solid #f0f0f0;">{{qty}}</td>
+                    <td style="padding: 12px; text-align: right; font-size: 14px; color: #4a4a4a; border-bottom: 1px solid #f0f0f0;">PKR {{unitPrice}}</td>
+                    <td style="padding: 12px; text-align: right; font-size: 14px; font-weight: 600; color: #2c1810; border-bottom: 1px solid #f0f0f0;">PKR {{subtotal}}</td>
+                  </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Totals Section -->
+          <tr>
+            <td style="padding: 0 30px 30px;">
+              <table role="presentation" style="width: 100%; max-width: 300px; margin-left: auto;">
+                <tr>
+                  <td style="padding: 8px 0; font-size: 15px; color: #4a4a4a;">Subtotal:</td>
+                  <td style="padding: 8px 0; text-align: right; font-size: 15px; color: #4a4a4a;">PKR {{subtotal}}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-size: 15px; color: #4a4a4a;">Shipping:</td>
+                  <td style="padding: 8px 0; text-align: right; font-size: 15px; color: #4a4a4a;">PKR {{shippingCost}}</td>
+                </tr>
+                <tr style="border-top: 2px solid #e0e0e0;">
+                  <td style="padding: 12px 0 0; font-size: 17px; font-weight: 700; color: #2c1810;">Total:</td>
+                  <td style="padding: 12px 0 0; text-align: right; font-size: 17px; font-weight: 700; color: #2c1810;">PKR {{total}}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Shipping Address -->
+          <tr>
+            <td style="padding: 0 30px 30px;">
+              <div style="background-color: #f9f9f9; padding: 20px; border-radius: 6px; border-left: 4px solid #c9a96e;">
+                <h3 style="margin: 0 0 12px; font-size: 16px; font-weight: 600; color: #2c1810;">Shipping Address</h3>
+                <p style="margin: 0; font-size: 14px; color: #4a4a4a; line-height: 1.6;">
+                  {{shippingAddress.fullName}}<br>
+                  {{#if shippingAddress.phone}}{{shippingAddress.phone}}<br>{{/if}}
+                  {{shippingAddress.street}}<br>
+                  {{#if shippingAddress.apartment}}{{shippingAddress.apartment}}<br>{{/if}}
+                  {{shippingAddress.city}}, {{shippingAddress.postalCode}}<br>
+                  {{shippingAddress.province}}, {{shippingAddress.country}}
+                </p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Account Credentials (if new customer) -->
+          {{#if generatedPassword}}
+          <tr>
+            <td style="padding: 0 30px 30px;">
+              <div style="background-color: #fffbea; padding: 20px; border-radius: 6px; border: 1px solid #f7e7a1;">
+                <h3 style="margin: 0 0 12px; font-size: 16px; font-weight: 600; color: #8b6914;">
+                  🎉 Your new account has been created
+                </h3>
+                <p style="margin: 0 0 12px; font-size: 14px; color: #4a4a4a; line-height: 1.6;">
+                  We've created an account for you so you can easily track your orders and manage your profile.
+                </p>
+                <table role="presentation" style="width: 100%; background-color: #ffffff; border-radius: 4px; padding: 12px; border: 1px solid #f0e6c0;">
+                  <tr>
+                    <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: #2c1810;">Email:</td>
+                    <td style="padding: 4px 0; font-size: 14px; color: #4a4a4a;">{{customerEmail}}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 4px 0; font-size: 14px; font-weight: 600; color: #2c1810;">Password:</td>
+                    <td style="padding: 4px 0; font-size: 14px; color: #4a4a4a; font-family: 'Courier New', monospace;">{{generatedPassword}}</td>
+                  </tr>
+                </table>
+                <p style="margin: 12px 0 0; font-size: 13px; color: #6b5b4d; line-height: 1.5;">
+                  ⚠️ Please save this password and log in to manage your orders. You can change it after logging in.
+                </p>
+              </div>
+            </td>
+          </tr>
+          {{/if}}
+
+          <!-- CTA Button -->
+          <tr>
+            <td style="padding: 0 30px 40px; text-align: center;">
+              <a href="https://amroozcollection.com" style="display: inline-block; background: linear-gradient(135deg, #c9a96e 0%, #b39358 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 12px rgba(201, 169, 110, 0.3);">
+                Visit Amrooz Collection
+              </a>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9f6f2; padding: 24px 30px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #e0e0e0;">
+              <p style="margin: 0 0 8px; font-size: 14px; color: #2c1810; font-weight: 600;">
+                Amrooz Collection
+              </p>
+              <p style="margin: 0; font-size: 13px; color: #6b5b4d; line-height: 1.6;">
+                Need help? Contact us at <a href="mailto:no-reply@amroozcollection.com" style="color: #c9a96e; text-decoration: none;">no-reply@amroozcollection.com</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

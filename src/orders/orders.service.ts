@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ConflictException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -14,6 +15,8 @@ import { ProductVariant } from '../products/product-variant.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderStatus, PaymentStatus } from '../common/enums';
+import { CustomersService } from '../customers/customers.service';
+import { MailService } from '../mail/mail.service';
 
 /**
  * Allowed order status transitions — prevents jumping e.g. pending → delivered
@@ -40,6 +43,8 @@ const idempotencyCache = new Map<
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     @InjectRepository(Order)
     private ordersRepository: Repository<Order>,
@@ -49,6 +54,8 @@ export class OrdersService {
     private productsRepository: Repository<Product>,
     @InjectRepository(ProductVariant)
     private variantsRepository: Repository<ProductVariant>,
+    private readonly customersService: CustomersService,
+    private readonly mailService: MailService,
   ) {}
 
   /**
@@ -288,6 +295,69 @@ export class OrdersService {
       setTimeout(() => {
         idempotencyCache.delete(idempotencyKey);
       }, 10 * 60 * 1000);
+    }
+
+    // Create customer account and send order confirmation email
+    // Wrap in try/catch — email/account failure must not fail the order
+    try {
+      // Parse firstName from shippingAddress.fullName
+      const nameParts = dto.shippingAddress.fullName.trim().split(/\s+/);
+      const firstName = nameParts[0] || 'Customer';
+
+      // Check if customer already exists
+      const existingCustomer = await this.customersService.findByEmail(dto.email);
+      
+      let plainPassword: string | null = null;
+
+      if (!existingCustomer) {
+        // Create new customer account
+        const { customer, plainPassword: pw } = await this.customersService.createFromOrder(
+          dto.email,
+          firstName,
+          dto.shippingAddress.phone || '',
+        );
+        plainPassword = pw;
+        
+        // Link order to new customer
+        await this.ordersRepository.update(savedOrder.id, { customerId: customer.id });
+        savedOrder.customerId = customer.id;
+        
+        this.logger.log(`Created new customer account for ${dto.email}`);
+      } else {
+        // Link order to existing customer
+        await this.ordersRepository.update(savedOrder.id, { customerId: existingCustomer.id });
+        savedOrder.customerId = existingCustomer.id;
+        
+        this.logger.log(`Linked order to existing customer ${dto.email}`);
+      }
+
+      // Build email items array
+      const emailItems = savedOrder.items.map((item) => ({
+        name: item.productName,
+        variant: item.variantLabel,
+        qty: item.quantity,
+        unitPrice: item.unitPrice,
+        subtotal: item.subtotal,
+      }));
+
+      // Send order confirmation email
+      await this.mailService.sendOrderConfirmation({
+        to: dto.email,
+        orderNumber: savedOrder.orderNumber,
+        items: emailItems,
+        subtotal: savedOrder.subtotal,
+        shippingCost: savedOrder.shippingCost,
+        total: savedOrder.total,
+        currency: savedOrder.currency,
+        shippingAddress: dto.shippingAddress,
+        generatedPassword: plainPassword,
+      });
+    } catch (error) {
+      // Log error but do NOT rethrow — order is already saved
+      this.logger.error(
+        `Failed to create customer account or send email for order ${savedOrder.orderNumber}: ${error.message}`,
+        error.stack,
+      );
     }
 
     return savedOrder;
