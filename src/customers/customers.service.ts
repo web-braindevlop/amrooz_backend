@@ -62,7 +62,7 @@ export class CustomersService {
     email: string,
     firstName: string,
     phone: string,
-  ): Promise<{ customer: Customer; plainPassword: string }> {
+  ): Promise<{ customer: Customer; plainPassword: string | null }> {
     const plainPassword = this.generateSecurePassword();
     const passwordHash = await hashPassword(plainPassword);
 
@@ -85,7 +85,7 @@ export class CustomersService {
         const existing = await this.findByEmail(email);
         if (existing) {
           // Return existing customer but with null password (we don't know theirs)
-          // The caller should check if plainPassword is needed
+          // The caller should treat this as an existing customer
           return { customer: existing, plainPassword: null };
         }
       }

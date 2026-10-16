@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import * as crypto from 'crypto';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
@@ -56,6 +56,7 @@ export class OrdersService {
     private variantsRepository: Repository<ProductVariant>,
     private readonly customersService: CustomersService,
     private readonly mailService: MailService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -275,17 +276,75 @@ export class OrdersService {
       currency: CURRENCY,
       shippingAddress: dto.shippingAddress,
       notes: dto.notes ?? null,
-      customerId: null, // Guest checkout
+      customerId: null, // Will be set in transaction below
     });
 
-    const savedOrder = await this.ordersRepository.save(order);
+    // Use transaction to atomically save order and link customer
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Create order items
-    const itemRows = await Promise.all(
-      dto.items.map((item) => this.buildOrderItem(item, savedOrder.id)),
-    );
-    const items = await this.orderItemsRepository.save(itemRows);
-    savedOrder.items = items;
+    let savedOrder: Order;
+    let plainPassword: string | null = null;
+
+    try {
+      // Save order first
+      savedOrder = await queryRunner.manager.save(Order, order);
+
+      // Create order items
+      const itemRows = await Promise.all(
+        dto.items.map((item) => this.buildOrderItem(item, savedOrder.id)),
+      );
+      const items = await queryRunner.manager.save(OrderItem, itemRows);
+      savedOrder.items = items;
+
+      // Create or link customer account
+      // Parse firstName from shippingAddress.fullName
+      const nameParts = dto.shippingAddress.fullName.trim().split(/\s+/);
+      const firstName = nameParts[0] || 'Customer';
+
+      // Check if customer already exists
+      const existingCustomer = await this.customersService.findByEmail(dto.email);
+
+      if (!existingCustomer) {
+        // Create new customer account
+        const { customer, plainPassword: pw } = await this.customersService.createFromOrder(
+          dto.email,
+          firstName,
+          dto.shippingAddress.phone || '',
+        );
+
+        // If plainPassword is null, it means race condition occurred and customer exists now
+        if (pw !== null) {
+          plainPassword = pw;
+          savedOrder.customerId = customer.id;
+          this.logger.log(`Created new customer account for ${dto.email}`);
+        } else {
+          // Race condition: customer was created between our check and save
+          // Treat as existing customer
+          savedOrder.customerId = customer.id;
+          this.logger.log(`Linked order to existing customer ${dto.email} (race condition resolved)`);
+        }
+      } else {
+        // Link order to existing customer
+        savedOrder.customerId = existingCustomer.id;
+        this.logger.log(`Linked order to existing customer ${dto.email}`);
+      }
+
+      // Update order with customerId in same transaction
+      await queryRunner.manager.update(Order, savedOrder.id, {
+        customerId: savedOrder.customerId,
+      });
+
+      // Commit transaction
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      // Rollback on any error
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
 
     // Cache for idempotency (10 minutes)
     if (idempotencyKey) {
@@ -297,40 +356,9 @@ export class OrdersService {
       }, 10 * 60 * 1000);
     }
 
-    // Create customer account and send order confirmation email
-    // Wrap in try/catch — email/account failure must not fail the order
+    // Send order confirmation email (outside transaction)
+    // Always send email; include password only for new customers
     try {
-      // Parse firstName from shippingAddress.fullName
-      const nameParts = dto.shippingAddress.fullName.trim().split(/\s+/);
-      const firstName = nameParts[0] || 'Customer';
-
-      // Check if customer already exists
-      const existingCustomer = await this.customersService.findByEmail(dto.email);
-      
-      let plainPassword: string | null = null;
-
-      if (!existingCustomer) {
-        // Create new customer account
-        const { customer, plainPassword: pw } = await this.customersService.createFromOrder(
-          dto.email,
-          firstName,
-          dto.shippingAddress.phone || '',
-        );
-        plainPassword = pw;
-        
-        // Link order to new customer
-        await this.ordersRepository.update(savedOrder.id, { customerId: customer.id });
-        savedOrder.customerId = customer.id;
-        
-        this.logger.log(`Created new customer account for ${dto.email}`);
-      } else {
-        // Link order to existing customer
-        await this.ordersRepository.update(savedOrder.id, { customerId: existingCustomer.id });
-        savedOrder.customerId = existingCustomer.id;
-        
-        this.logger.log(`Linked order to existing customer ${dto.email}`);
-      }
-
       // Build email items array
       const emailItems = savedOrder.items.map((item) => ({
         name: item.productName,
@@ -341,6 +369,7 @@ export class OrdersService {
       }));
 
       // Send order confirmation email
+      // generatedPassword will be null for existing customers
       await this.mailService.sendOrderConfirmation({
         to: dto.email,
         orderNumber: savedOrder.orderNumber,
@@ -350,13 +379,13 @@ export class OrdersService {
         total: savedOrder.total,
         currency: savedOrder.currency,
         shippingAddress: dto.shippingAddress,
-        generatedPassword: plainPassword,
+        generatedPassword: plainPassword, // null for existing customers
       });
     } catch (error) {
       // Log error but do NOT rethrow — order is already saved
       // Sanitize error to avoid leaking sensitive data (e.g., password)
       this.logger.error(
-        `Failed to create customer account or send email for order ${savedOrder.orderNumber}: ${error.message}`,
+        `Failed to send email for order ${savedOrder.orderNumber}: ${error.message}`,
       );
     }
 
