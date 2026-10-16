@@ -46,9 +46,9 @@ export class MailService {
       this.logger.log(`Order confirmation email sent to ${params.to} for order #${params.orderNumber}`);
     } catch (error) {
       // Log but do NOT throw — email failure should not fail the order
+      // Sanitize error to avoid leaking sensitive data (e.g., password in stack trace)
       this.logger.error(
-        `Failed to send order confirmation email to ${params.to}: ${error.message}`,
-        error.stack,
+        `Failed to send order confirmation email to ${params.to} for order #${params.orderNumber}: ${error.message}`,
       );
     }
   }

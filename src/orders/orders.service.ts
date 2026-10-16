@@ -354,9 +354,9 @@ export class OrdersService {
       });
     } catch (error) {
       // Log error but do NOT rethrow — order is already saved
+      // Sanitize error to avoid leaking sensitive data (e.g., password)
       this.logger.error(
         `Failed to create customer account or send email for order ${savedOrder.orderNumber}: ${error.message}`,
-        error.stack,
       );
     }
 

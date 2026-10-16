@@ -93,12 +93,12 @@
               <div style="background-color: #f9f9f9; padding: 20px; border-radius: 6px; border-left: 4px solid #c9a96e;">
                 <h3 style="margin: 0 0 12px; font-size: 16px; font-weight: 600; color: #2c1810;">Shipping Address</h3>
                 <p style="margin: 0; font-size: 14px; color: #4a4a4a; line-height: 1.6;">
-                  {{shippingAddress.fullName}}<br>
+                  {{#if shippingAddress.fullName}}{{shippingAddress.fullName}}<br>{{/if}}
                   {{#if shippingAddress.phone}}{{shippingAddress.phone}}<br>{{/if}}
-                  {{shippingAddress.street}}<br>
+                  {{#if shippingAddress.street}}{{shippingAddress.street}}<br>{{/if}}
                   {{#if shippingAddress.apartment}}{{shippingAddress.apartment}}<br>{{/if}}
-                  {{shippingAddress.city}}, {{shippingAddress.postalCode}}<br>
-                  {{shippingAddress.province}}, {{shippingAddress.country}}
+                  {{#if shippingAddress.city}}{{shippingAddress.city}}{{#if shippingAddress.postalCode}}, {{shippingAddress.postalCode}}{{/if}}<br>{{/if}}
+                  {{#if shippingAddress.province}}{{shippingAddress.province}}{{#if shippingAddress.country}}, {{shippingAddress.country}}{{/if}}{{/if}}
                 </p>
               </div>
             </td>

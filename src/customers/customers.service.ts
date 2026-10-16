@@ -43,16 +43,20 @@ export class CustomersService {
       password += allChars[crypto.randomInt(allChars.length)];
     }
 
-    // Shuffle to avoid predictable pattern
-    return password
-      .split('')
-      .sort(() => crypto.randomInt(3) - 1)
-      .join('');
+    // Fisher-Yates shuffle to avoid predictable pattern
+    const chars = password.split('');
+    for (let i = chars.length - 1; i > 0; i--) {
+      const j = crypto.randomInt(i + 1);
+      [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+    return chars.join('');
   }
 
   /**
    * Create a new customer from order checkout data.
    * Returns both the customer record and the plain-text password.
+   * Handles race condition: if two concurrent orders create the same customer,
+   * retry by fetching the existing record.
    */
   async createFromOrder(
     email: string,
@@ -71,8 +75,22 @@ export class CustomersService {
       acceptsMarketing: false,
     });
 
-    const savedCustomer = await this.customersRepository.save(customer);
-
-    return { customer: savedCustomer, plainPassword };
+    try {
+      const savedCustomer = await this.customersRepository.save(customer);
+      return { customer: savedCustomer, plainPassword };
+    } catch (error) {
+      // Handle unique constraint violation (race condition)
+      if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+        // Another request created this customer — fetch existing record
+        const existing = await this.findByEmail(email);
+        if (existing) {
+          // Return existing customer but with null password (we don't know theirs)
+          // The caller should check if plainPassword is needed
+          return { customer: existing, plainPassword: null };
+        }
+      }
+      // Re-throw any other error
+      throw error;
+    }
   }
 }
