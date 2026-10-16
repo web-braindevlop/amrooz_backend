@@ -59,20 +59,28 @@ export class OrdersService {
   }
 
   /**
+   * Parse sale date string to timestamp, mirroring frontend parseSaleInstant logic.
+   * Date-only strings (YYYY-MM-DD) get T00:00:00 or T23:59:59 appended based on endOfDayIfDateOnly.
+   */
+  private parseSaleInstant(value: string | null | undefined, endOfDayIfDateOnly: boolean): number | null {
+    if (!value) return null;
+    let s = String(value).replace(' ', 'T');
+    if (s.length <= 10) s = `${s}T${endOfDayIfDateOnly ? '23:59:59' : '00:00:00'}`;
+    const t = new Date(s).getTime();
+    return Number.isNaN(t) ? null : t;
+  }
+
+  /**
    * Check if a variant's sale price is within its scheduled window.
    */
   private resolveSaleWindowActive(variant: ProductVariant): boolean {
     const now = Date.now();
 
-    if (variant.saleStartDate) {
-      const start = new Date(variant.saleStartDate).getTime();
-      if (!isNaN(start) && now < start) return false;
-    }
+    const start = this.parseSaleInstant(variant.saleStartDate, false);
+    if (start !== null && now < start) return false;
 
-    if (variant.saleEndDate) {
-      const end = new Date(variant.saleEndDate).getTime();
-      if (!isNaN(end) && now > end) return false;
-    }
+    const end = this.parseSaleInstant(variant.saleEndDate, true);
+    if (end !== null && now > end) return false;
 
     return true;
   }
