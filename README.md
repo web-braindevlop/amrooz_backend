@@ -153,10 +153,14 @@ SSH_PORT=65002
 ## 🔐 Security
 
 - JWT tokens with access/refresh pattern
-- Password hashing with bcrypt
+- Password hashing with bcrypt (12 rounds)
 - CORS configured for frontend domain
 - Rate limiting with throttler
 - SQL injection protection via TypeORM
+- Automatic customer account creation with secure password generation
+- Transactional order confirmation emails
+
+**⚠️ Important:** See [SECURITY.md](./SECURITY.md) for critical information about managing secrets and credentials.
 
 ## 🛡️ Environment Variables
 
@@ -172,6 +176,14 @@ SSH_PORT=65002
 | `FRONTEND_URL` | Frontend URL for CORS | `https://amroozcollection.com` |
 | `JWT_ACCESS_SECRET` | JWT access token secret | Random 64-char string |
 | `JWT_REFRESH_SECRET` | JWT refresh token secret | Random 64-char string |
+| `MAIL_HOST` | SMTP host | `mail.amroozcollection.com` |
+| `MAIL_PORT` | SMTP port | `465` |
+| `MAIL_SECURE` | Use SSL/TLS | `true` |
+| `MAIL_USER` | SMTP username/email | `no-reply@amroozcollection.com` |
+| `MAIL_PASS` | SMTP password | ⚠️ Set via hosting panel |
+| `MAIL_FROM` | Email sender name | `Amrooz Collection <no-reply@...>` |
+
+**⚠️ Security Note:** Never commit real passwords to `.env`. For production, set `MAIL_PASS` and other secrets via your hosting provider's environment variables panel. See [SECURITY.md](./SECURITY.md) for details.
 
 ## 📄 License
 
