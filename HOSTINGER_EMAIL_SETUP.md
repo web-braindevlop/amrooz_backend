@@ -116,12 +116,12 @@ Not recommended as many servers block it to prevent spam.
 
 ## Current Configuration Status
 
-Your `.env` file currently uses:
-- **Host:** `mail.amroozcollection.com` (Domain-specific - Option 1)
+Your `.env` file should use:
+- **Host:** `smtp.hostinger.com` (Recommended - Always works)
 - **Port:** `465` (SSL)
 - **Security:** SSL enabled
 
-This is the **recommended setup** for Hostinger with your domain.
+**Note:** `mail.amroozcollection.com` may not resolve from all locations. Use `smtp.hostinger.com` for reliable delivery.
 
 ---
 
