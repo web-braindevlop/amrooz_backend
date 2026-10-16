@@ -59,6 +59,39 @@ export class OrdersService {
   }
 
   /**
+   * Check if a variant's sale price is within its scheduled window.
+   */
+  private resolveSaleWindowActive(variant: ProductVariant): boolean {
+    const now = Date.now();
+
+    if (variant.saleStartDate) {
+      const start = new Date(variant.saleStartDate).getTime();
+      if (!isNaN(start) && now < start) return false;
+    }
+
+    if (variant.saleEndDate) {
+      const end = new Date(variant.saleEndDate).getTime();
+      if (!isNaN(end) && now > end) return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Resolve the effective price for a variant, matching frontend logic.
+   * Returns salePrice if set and within window, otherwise regular price.
+   */
+  private resolveActualPrice(variant: ProductVariant): number {
+    const regular = variant.priceOverride ?? variant.product.price;
+    
+    if (variant.salePrice != null && this.resolveSaleWindowActive(variant)) {
+      return variant.salePrice;
+    }
+    
+    return regular;
+  }
+
+  /**
    * Verify that the client-sent unitPrice matches the current DB price.
    * Throws BadRequestException if mismatch > 0.01.
    */
@@ -84,8 +117,8 @@ export class OrdersService {
             `Variant with ID ${item.variantId} not found`,
           );
         }
-        // Variant price override or fall back to product price
-        actualPrice = variant.priceOverride ?? variant.product.price;
+        // Resolve effective price (including sale price if active)
+        actualPrice = this.resolveActualPrice(variant);
         label = `variant ${item.variantId}`;
       } else {
         const product = await this.productsRepository.findOne({
