@@ -44,23 +44,38 @@ async function bootstrap() {
   const allowedOrigins: string[] = [];
   if (frontendUrl) {
     allowedOrigins.push(frontendUrl);
-    // Also allow both www and non-www versions
+    
+    // Extract domain without protocol
     const urlWithoutProtocol = frontendUrl.replace(/^https?:\/\//, '');
+    
+    // Add both http and https versions
+    allowedOrigins.push(`https://${urlWithoutProtocol}`);
+    allowedOrigins.push(`http://${urlWithoutProtocol}`);
+    
+    // Also allow both www and non-www versions
     if (urlWithoutProtocol.startsWith('www.')) {
       // If URL has www, also allow without www
-      allowedOrigins.push(frontendUrl.replace('www.', ''));
+      const withoutWww = urlWithoutProtocol.replace('www.', '');
+      allowedOrigins.push(`https://${withoutWww}`);
+      allowedOrigins.push(`http://${withoutWww}`);
     } else {
       // If URL doesn't have www, also allow with www
-      const protocol = frontendUrl.startsWith('https') ? 'https://' : 'http://';
-      allowedOrigins.push(protocol + 'www.' + urlWithoutProtocol);
+      allowedOrigins.push(`https://www.${urlWithoutProtocol}`);
+      allowedOrigins.push(`http://www.${urlWithoutProtocol}`);
     }
   }
+  
+  // Remove duplicates
+  const uniqueAllowedOrigins = Array.from(new Set(allowedOrigins));
   
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (uniqueAllowedOrigins.includes(origin)) return callback(null, true);
       if (allowAnyLocalOrigin && localOriginPattern.test(origin)) return callback(null, true);
+      
+      // Log rejected origins to help diagnose CORS issues
+      Logger.warn(`CORS: Rejected origin "${origin}". Allowed origins: ${uniqueAllowedOrigins.join(', ')}`);
       callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
