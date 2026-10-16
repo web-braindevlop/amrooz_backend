@@ -15,6 +15,7 @@ import { OrdersModule } from './orders/orders.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { MailModule } from './mail/mail.module';
 import { CustomersModule } from './customers/customers.module';
+import { CustomerAuthModule } from './customer-auth/customer-auth.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { CustomersModule } from './customers/customers.module';
     UploadsModule,
     MailModule,
     CustomersModule,
+    CustomerAuthModule,
   ],
   providers: [
     {

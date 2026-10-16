@@ -38,6 +38,16 @@ export class Customer {
   @Column({ default: false })
   acceptsMarketing: boolean;
 
+  @Column({ default: 0 })
+  failedLoginAttempts: number;
+
+  // Set when failedLoginAttempts crosses the threshold; login is rejected until this passes.
+  @Column({ type: 'datetime', nullable: true })
+  lockedUntil: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  lastLoginAt: Date | null;
+
   @OneToMany(() => Address, (address) => address.customer, { cascade: true })
   addresses: Address[];
 

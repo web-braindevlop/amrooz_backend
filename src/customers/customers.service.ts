@@ -22,6 +22,45 @@ export class CustomersService {
   }
 
   /**
+   * Find a customer by ID.
+   */
+  async findById(id: number): Promise<Customer | null> {
+    return this.customersRepository.findOne({
+      where: { id },
+    });
+  }
+
+  /**
+   * Find a customer by email with password hash included.
+   */
+  async findByEmailWithPassword(email: string): Promise<Customer | null> {
+    return this.customersRepository
+      .createQueryBuilder('customer')
+      .addSelect('customer.passwordHash')
+      .where('customer.email = :email', { email: email.toLowerCase() })
+      .getOne();
+  }
+
+  /**
+   * Update customer profile data.
+   */
+  async updateProfile(
+    id: number,
+    dto: { firstName?: string; lastName?: string; phone?: string },
+  ): Promise<Customer> {
+    const customer = await this.customersRepository.findOne({ where: { id } });
+    if (!customer) {
+      throw new Error('Customer not found');
+    }
+
+    if (dto.firstName !== undefined) customer.firstName = dto.firstName;
+    if (dto.lastName !== undefined) customer.lastName = dto.lastName;
+    if (dto.phone !== undefined) customer.phone = dto.phone;
+
+    return this.customersRepository.save(customer);
+  }
+
+  /**
    * Generate a secure 12-character password with mixed case, numbers, and special chars.
    */
   private generateSecurePassword(): string {

@@ -7,7 +7,7 @@ import cookieParser from 'cookie-parser';
 import { join } from 'path';
 
 function assertSecretsConfigured() {
-  const required = ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
+  const required = ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'JWT_CUSTOMER_SECRET'];
   const missing = required.filter((key) => !process.env[key] || process.env[key].length < 32);
   if (missing.length) {
     throw new Error(
