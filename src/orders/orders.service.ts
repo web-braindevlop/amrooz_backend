@@ -384,8 +384,9 @@ export class OrdersService {
     } catch (error) {
       // Log error but do NOT rethrow — order is already saved
       // Sanitize error to avoid leaking sensitive data (e.g., password)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
-        `Failed to send email for order ${savedOrder.orderNumber}: ${error.message}`,
+        `Failed to send email for order ${savedOrder.orderNumber}: ${errorMessage}`,
       );
     }
 
