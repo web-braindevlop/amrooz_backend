@@ -27,6 +27,7 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' });
+  app.useStaticAssets(join(process.cwd(), 'public'), { prefix: '/public/' });
 
   // Cookies carry the session, so CORS must reflect a known, explicit origin —
   // never a wildcard — with credentials enabled. FRONTEND_URL is always
