@@ -123,7 +123,13 @@ export class CustomerAuthService {
   }
 
   async forgotPassword(email: string): Promise<void> {
-    const customer = await this.customersService.findByEmail(email);
+    // Need to use QueryBuilder to load customer with resetPasswordToken field
+    // (it has select: false on the entity)
+    const customer = await this.customerRepository
+      .createQueryBuilder('c')
+      .addSelect('c.resetPasswordToken')
+      .where('c.email = :email', { email: email.toLowerCase() })
+      .getOne();
 
     // Always return silently to avoid revealing whether email exists
     if (!customer) {
