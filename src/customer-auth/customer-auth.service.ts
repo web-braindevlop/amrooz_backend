@@ -3,13 +3,16 @@ import {
   UnauthorizedException,
   ForbiddenException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
+import { randomBytes } from 'node:crypto';
 import { hashPassword, verifyPassword } from '../common/password';
 import { Customer } from '../customers/customer.entity';
 import { CustomersService } from '../customers/customers.service';
+import { MailService } from '../mail/mail.service';
 import { RegisterDto } from './dto/register.dto';
 
 const MAX_FAILED_ATTEMPTS = 5;
@@ -26,6 +29,7 @@ export class CustomerAuthService {
     private readonly customerRepository: Repository<Customer>,
     private readonly customersService: CustomersService,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   async validateAndLogin(
@@ -116,5 +120,52 @@ export class CustomerAuthService {
     );
 
     return { customer: savedCustomer, accessToken };
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    const customer = await this.customersService.findByEmail(email);
+
+    // Always return silently to avoid revealing whether email exists
+    if (!customer) {
+      return;
+    }
+
+    const token = randomBytes(32).toString('hex');
+    customer.resetPasswordToken = token;
+    customer.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await this.customerRepository.save(customer);
+
+    await this.mailService.sendPasswordResetEmail(
+      customer.email,
+      token,
+      customer.firstName,
+    );
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const customer = await this.customerRepository
+      .createQueryBuilder('c')
+      .addSelect('c.resetPasswordToken')
+      .addSelect('c.resetPasswordExpires')
+      .addSelect('c.passwordHash')
+      .where('c.resetPasswordToken = :token', { token })
+      .getOne();
+
+    if (
+      !customer ||
+      !customer.resetPasswordExpires ||
+      customer.resetPasswordExpires.getTime() <= Date.now()
+    ) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    customer.passwordHash = await hashPassword(newPassword);
+    customer.resetPasswordToken = null;
+    customer.resetPasswordExpires = null;
+    customer.failedLoginAttempts = 0;
+    customer.lockedUntil = null;
+
+    await this.customerRepository.save(customer);
   }
 }

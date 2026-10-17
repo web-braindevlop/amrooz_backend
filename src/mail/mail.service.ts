@@ -52,4 +52,25 @@ export class MailService {
       );
     }
   }
+
+  async sendPasswordResetEmail(to: string, token: string, firstName: string): Promise<void> {
+    try {
+      await this.mailerService.sendMail({
+        to,
+        subject: 'Reset Your Password | Amrooz Collection',
+        template: './password-reset',
+        context: {
+          firstName,
+          resetLink: `https://amroozcollection.com/account/reset-password?token=${token}`,
+          expiresInMinutes: 60,
+        },
+      });
+      this.logger.log(`Password reset email sent to ${to}`);
+    } catch (error) {
+      // Log but do NOT throw — email failure should not fail the request
+      this.logger.error(
+        `Failed to send password reset email to ${to}: ${error.message}`,
+      );
+    }
+  }
 }

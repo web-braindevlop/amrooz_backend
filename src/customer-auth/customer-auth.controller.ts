@@ -9,6 +9,8 @@ import { Throttle } from '@nestjs/throttler';
 import { CustomerAuthService } from './customer-auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('customer-auth')
 export class CustomerAuthController {
@@ -43,5 +45,21 @@ export class CustomerAuthController {
       lastName: customer.lastName,
       accessToken,
     };
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.customerAuthService.forgotPassword(dto.email);
+    return { message: 'If an account exists for this email, a reset link has been sent.' };
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.customerAuthService.resetPassword(dto.token, dto.newPassword);
+    return { message: 'Password reset successfully.' };
   }
 }

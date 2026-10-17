@@ -48,6 +48,12 @@ export class Customer {
   @Column({ type: 'datetime', nullable: true })
   lastLoginAt: Date | null;
 
+  @Column({ length: 255, nullable: true, select: false })
+  resetPasswordToken: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  resetPasswordExpires: Date | null;
+
   @OneToMany(() => Address, (address) => address.customer, { cascade: true })
   addresses: Address[];
 
