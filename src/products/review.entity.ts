@@ -8,8 +8,10 @@ import {
   Index,
 } from 'typeorm';
 import { Product } from './product.entity';
+import { Customer } from '../customers/customer.entity';
 
 @Entity('reviews')
+@Index('idx_reviews_customer_product', ['customerId', 'productId'], { unique: true })
 export class Review {
   @PrimaryGeneratedColumn()
   id: number;
@@ -39,6 +41,14 @@ export class Review {
   @ManyToOne(() => Product, (product) => product.reviews, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'productId' })
   product: Product;
+
+  @Index()
+  @Column({ nullable: true })
+  customerId: number;
+
+  @ManyToOne(() => Customer, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'customerId' })
+  customer: Customer;
 
   @CreateDateColumn()
   createdAt: Date;
