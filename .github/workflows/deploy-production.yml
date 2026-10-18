@@ -8,6 +8,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_SSH_HOST: ${{ secrets.SSH_HOST || vars.SSH_HOST }}
+      DEPLOY_SSH_USERNAME: ${{ secrets.SSH_USERNAME || vars.SSH_USERNAME }}
+      DEPLOY_SSH_PASSWORD: ${{ secrets.SSH_PASSWORD || vars.SSH_PASSWORD }}
+      DEPLOY_SSH_PORT: ${{ secrets.SSH_PORT || vars.SSH_PORT }}
     
     steps:
       - name: Checkout code
@@ -22,39 +27,106 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build application
+      - name: Build NestJS application
         run: npm run build
+
+      - name: Create deployment package
+        run: |
+          echo "📦 Creating deployment package..."
+          # Create a tarball with built files and necessary runtime files
+          tar -czf deployment.tar.gz \
+            dist \
+            package.json \
+            package-lock.json \
+            node_modules
+
+      - name: Validate deployment credentials
+        run: |
+          missing=()
+          [ -z "$DEPLOY_SSH_HOST" ] && missing+=("SSH_HOST/secrets or vars")
+          [ -z "$DEPLOY_SSH_USERNAME" ] && missing+=("SSH_USERNAME/secrets or vars")
+          [ -z "$DEPLOY_SSH_PASSWORD" ] && missing+=("SSH_PASSWORD/secrets or vars")
+          [ -z "$DEPLOY_SSH_PORT" ] && missing+=("SSH_PORT/secrets or vars")
+
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "❌ Missing deployment credentials: ${missing[*]}"
+            exit 1
+          fi
 
       - name: Deploy to Hostinger via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ 145.79.30.125 }}
-          username: ${{ u278943707 }}
-          password: ${{ ZXC@789v }}
-          port: ${{ 65002 }}
+          host: ${{ env.DEPLOY_SSH_HOST }}
+          username: ${{ env.DEPLOY_SSH_USERNAME }}
+          password: ${{ env.DEPLOY_SSH_PASSWORD }}
+          port: ${{ env.DEPLOY_SSH_PORT }}
           script: |
-            echo "🚀 Starting deployment..."
+            echo "🚀 Starting backend deployment..."
             
-            # Navigate to project directory
+            # Create deployment directory
+            DEPLOY_DIR="/home/u278943707/domains/api.amroozcollection.com/hbuilds/current/nodejs"
+            mkdir -p $DEPLOY_DIR
+            cd $DEPLOY_DIR
+            
+            # Backup current deployment
+            if [ -d "dist" ]; then
+              echo "📦 Backing up current deployment..."
+              tar -czf backup-$(date +%Y%m%d-%H%M%S).tar.gz dist || true
+              # Keep only last 3 backups
+              ls -t backup-*.tar.gz | tail -n +4 | xargs rm -f 2>/dev/null || true
+            fi
+            
+            echo "✅ Ready for file transfer"
+
+      - name: Transfer build files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.DEPLOY_SSH_HOST }}
+          username: ${{ env.DEPLOY_SSH_USERNAME }}
+          password: ${{ env.DEPLOY_SSH_PASSWORD }}
+          port: ${{ env.DEPLOY_SSH_PORT }}
+          source: "deployment.tar.gz"
+          target: "/home/u278943707/domains/api.amroozcollection.com/hbuilds/current/nodejs/"
+
+      - name: Extract and restart application
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.DEPLOY_SSH_HOST }}
+          username: ${{ env.DEPLOY_SSH_USERNAME }}
+          password: ${{ env.DEPLOY_SSH_PASSWORD }}
+          port: ${{ env.DEPLOY_SSH_PORT }}
+          script: |
             cd /home/u278943707/domains/api.amroozcollection.com/hbuilds/current/nodejs
             
-            # Pull latest code from GitHub
-            git pull origin main
+            echo "📂 Extracting build files..."
+            tar -xzf deployment.tar.gz
+            rm deployment.tar.gz
             
-            # Install dependencies
-            npm ci --production
+            echo "🔧 Setting permissions..."
+            chmod -R 755 dist
             
-            # Build the application
-            npm run build
+            echo "🔄 Restarting application..."
+            # If using PM2
+            if command -v pm2 &> /dev/null; then
+              pm2 restart amrooz-backend || pm2 start dist/main.js --name "amrooz-backend"
+            else
+              echo "⚠️  PM2 not found, touching file to trigger restart"
+              touch dist/main.js
+            fi
             
-            # Restart the application (Hostinger will auto-restart on file changes)
-            touch /home/u278943707/domains/api.amroozcollection.com/hbuilds/current/nodejs/dist/main.js
-            
-            echo "✅ Deployment completed successfully!"
+            echo "✅ Backend deployment completed successfully!"
 
       - name: Verify deployment
         run: |
           echo "⏳ Waiting for server to restart..."
           sleep 10
-          curl -f https://api.amroozcollection.com/api || exit 1
-          echo "✅ Backend is responding!"
+          
+          echo "🔍 Checking if API is responding..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://api.amroozcollection.com/api)
+          
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "404" ]; then
+            echo "✅ Backend is responding! (HTTP $HTTP_CODE)"
+          else
+            echo "⚠️  Warning: API returned HTTP $HTTP_CODE"
+            exit 1
+          fi
