@@ -56,6 +56,12 @@
     "@nestjs/platform-express": {
       "multer": "^2.3.0"
     },
+    "mailparser": {
+      "nodemailer": "^10.1.2"
+    },
+    "preview-email": {
+      "nodemailer": "^10.1.2"
+    },
     "tmp": "^0.2.6",
     "uuid": "^11.1.1",
     "@nestjs/typeorm": {
