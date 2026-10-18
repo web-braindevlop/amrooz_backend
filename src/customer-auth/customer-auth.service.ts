@@ -73,7 +73,7 @@ export class CustomerAuthService {
       { sub: customer.id, email: customer.email },
       {
         secret: process.env.JWT_CUSTOMER_SECRET,
-        expiresIn: (process.env.JWT_CUSTOMER_EXPIRES || '24h') as string,
+        expiresIn: '24h',
       },
     );
 
@@ -115,7 +115,7 @@ export class CustomerAuthService {
       { sub: savedCustomer.id, email: savedCustomer.email },
       {
         secret: process.env.JWT_CUSTOMER_SECRET,
-        expiresIn: (process.env.JWT_CUSTOMER_EXPIRES || '24h') as string,
+        expiresIn: '24h',
       },
     );
 
