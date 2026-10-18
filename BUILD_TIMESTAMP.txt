@@ -1,0 +1,8 @@
+Build triggered: 2026-10-18 08:57:00
+Reason: Added reviews module - needs rebuild
+Files added:
+- src/products/reviews.controller.ts
+- src/products/reviews.service.ts
+- src/products/dto/create-review.dto.ts
+- src/products/dto/review-response.dto.ts
+- src/customer-auth/decorators/get-customer.decorator.ts
