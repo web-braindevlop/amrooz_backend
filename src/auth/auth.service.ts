@@ -93,12 +93,12 @@ export class AuthService {
 
     const accessToken = await this.jwtService.signAsync(
       { sub: admin.id, email: admin.email },
-      { secret: this.accessTokenSecret(), expiresIn: process.env.JWT_ACCESS_EXPIRES || '15m' },
+      { secret: this.accessTokenSecret(), expiresIn: (process.env.JWT_ACCESS_EXPIRES || '15m') as string },
     );
 
     const refreshToken = await this.jwtService.signAsync(
       { sub: admin.id, jti },
-      { secret: this.refreshTokenSecret(), expiresIn: process.env.JWT_REFRESH_EXPIRES || '7d' },
+      { secret: this.refreshTokenSecret(), expiresIn: (process.env.JWT_REFRESH_EXPIRES || '7d') as string },
     );
 
     admin.refreshTokenHash = await hashPassword(refreshToken);
