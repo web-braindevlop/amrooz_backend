@@ -79,7 +79,10 @@ export class ProductsService {
     const colors = Array.from(
       new Set(variants.map((v) => v.colorHex).filter(Boolean)),
     );
-    const sizes = Array.from(new Set(variants.map((v) => v.size).filter(Boolean)));
+    const sizes = Array.from(new Set([
+      ...(product.sizes || []),
+      ...variants.map((v) => v.size).filter(Boolean),
+    ]));
 
     return {
       id: product.id,

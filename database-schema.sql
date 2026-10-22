@@ -119,6 +119,7 @@ CREATE TABLE IF NOT EXISTS `products` (
   `sku` varchar(80) DEFAULT NULL,
   `brandId` int DEFAULT NULL,
   `stock` int NOT NULL DEFAULT '0',
+  `sizes` json DEFAULT NULL,
   `isActive` tinyint NOT NULL DEFAULT '1',
   `isFeatured` tinyint NOT NULL DEFAULT '0',
   `isNew` tinyint NOT NULL DEFAULT '0',

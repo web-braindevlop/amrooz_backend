@@ -62,6 +62,10 @@ export class Product {
   @Column({ default: 0 })
   stock: number;
 
+  // Available size choices for simple products (variable products use variants).
+  @Column('simple-json', { nullable: true })
+  sizes: string[];
+
   @Column({ default: true })
   isActive: boolean;
 

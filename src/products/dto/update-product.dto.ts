@@ -70,6 +70,11 @@ export class UpdateProductDto {
   stock?: number;
 
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  sizes?: string[];
+
+  @IsOptional()
   @IsInt()
   categoryId?: number;
 
