@@ -35,11 +35,6 @@ export class CreateVariantDto {
   stock?: number;
 
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  sizes?: string[];
-
-  @IsOptional()
   @IsNumber()
   @Min(0)
   priceOverride?: number;
@@ -129,6 +124,11 @@ export class CreateProductDto {
   @IsInt()
   @Min(0)
   stock?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  sizes?: string[];
 
   @IsOptional()
   @IsInt()
